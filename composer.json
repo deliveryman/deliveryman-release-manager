@@ -1,0 +1,26 @@
+{
+	"name" : "release-manager",
+	"version" : "0.1.0-dev",
+	"require" : {
+		"symfony/console" : "~2.6",
+		"illuminate/remote" : "~4.2"
+	},
+	"authors" : [{
+			"name" : "Alexander Sergeychik",
+			"email" : "alexander.sergeychik@gmail.com"
+		}
+	],
+	"description" : "Manages releases on remote server",
+	"type" : "project",
+	"license" : "MIT",
+	"autoload" : {
+		"psr-0" : {
+			"Omez\\ReleaseManager" : "src"
+		}
+	},
+	"keywords" : [
+		"ssh",
+		"remote",
+		"deploy"
+	]
+}
