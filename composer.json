@@ -1,9 +1,10 @@
 {
-	"name" : "release-manager",
+	"name" : "deliveryman/release-manager",
 	"version" : "0.1.0-dev",
 	"require" : {
 		"symfony/console" : "~2.6",
-		"illuminate/remote" : "~4.2"
+		"symfony/config" : "~2.6",
+		"phpseclib/phpseclib" : "~0.3"
 	},
 	"authors" : [{
 			"name" : "Alexander Sergeychik",
@@ -15,12 +16,16 @@
 	"license" : "MIT",
 	"autoload" : {
 		"psr-0" : {
-			"Omez\\ReleaseManager" : "src"
+			"Deliveryman" : [
+				"lib",
+				"src"
+			]
 		}
 	},
 	"keywords" : [
 		"ssh",
 		"remote",
-		"deploy"
+		"deploy",
+		"release"
 	]
 }

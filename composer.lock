@@ -4,146 +4,8 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "ce2fcb68d9936e98cfa1efab12f1a9a6",
+    "hash": "f868da807e959d26772aea78a8e7d007",
     "packages": [
-        {
-            "name": "illuminate/filesystem",
-            "version": "v4.2.16",
-            "target-dir": "Illuminate/Filesystem",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/illuminate/filesystem.git",
-                "reference": "bf8e1443b956e2b87dc71f40035380fbc790f612"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/filesystem/zipball/bf8e1443b956e2b87dc71f40035380fbc790f612",
-                "reference": "bf8e1443b956e2b87dc71f40035380fbc790f612",
-                "shasum": ""
-            },
-            "require": {
-                "illuminate/support": "4.2.*",
-                "php": ">=5.4.0",
-                "symfony/finder": "2.5.*"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "4.2-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Illuminate\\Filesystem": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Taylor Otwell",
-                    "email": "taylorotwell@gmail.com"
-                }
-            ],
-            "time": "2014-10-10 14:30:55"
-        },
-        {
-            "name": "illuminate/remote",
-            "version": "v4.2.16",
-            "target-dir": "Illuminate/Remote",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/illuminate/remote.git",
-                "reference": "8e679fae83ad3322236b6cdf96ae357b15125a22"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/remote/zipball/8e679fae83ad3322236b6cdf96ae357b15125a22",
-                "reference": "8e679fae83ad3322236b6cdf96ae357b15125a22",
-                "shasum": ""
-            },
-            "require": {
-                "illuminate/filesystem": "4.2.*",
-                "illuminate/support": "4.2.*",
-                "php": ">=5.4.0",
-                "phpseclib/phpseclib": "0.3.*"
-            },
-            "require-dev": {
-                "illuminate/console": "4.2.*"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "4.2-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Illuminate\\Remote": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Taylor Otwell",
-                    "email": "taylorotwell@gmail.com"
-                }
-            ],
-            "time": "2014-09-20 13:19:26"
-        },
-        {
-            "name": "illuminate/support",
-            "version": "v4.2.16",
-            "target-dir": "Illuminate/Support",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/illuminate/support.git",
-                "reference": "015f51f4d8cb3d9a29e7fe7932843acf15232941"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/support/zipball/015f51f4d8cb3d9a29e7fe7932843acf15232941",
-                "reference": "015f51f4d8cb3d9a29e7fe7932843acf15232941",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "jeremeamia/superclosure": "~1.0.1",
-                "patchwork/utf8": "1.1.*"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "4.2-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Illuminate\\Support": ""
-                },
-                "files": [
-                    "Illuminate/Support/helpers.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Taylor Otwell",
-                    "email": "taylorotwell@gmail.com"
-                }
-            ],
-            "time": "2014-12-19 18:02:33"
-        },
         {
             "name": "phpseclib/phpseclib",
             "version": "0.3.9",
@@ -243,6 +105,54 @@
             "time": "2014-11-10 03:08:59"
         },
         {
+            "name": "symfony/config",
+            "version": "v2.6.3",
+            "target-dir": "Symfony/Component/Config",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/Config.git",
+                "reference": "d94f222eff99a22ce313555b78642b4873418d56"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/Config/zipball/d94f222eff99a22ce313555b78642b4873418d56",
+                "reference": "d94f222eff99a22ce313555b78642b4873418d56",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3",
+                "symfony/filesystem": "~2.3"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.6-dev"
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "Symfony\\Component\\Config\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Symfony Community",
+                    "homepage": "http://symfony.com/contributors"
+                },
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                }
+            ],
+            "description": "Symfony Config Component",
+            "homepage": "http://symfony.com",
+            "time": "2015-01-03 08:01:59"
+        },
+        {
             "name": "symfony/console",
             "version": "v2.6.3",
             "target-dir": "Symfony/Component/Console",
@@ -300,18 +210,18 @@
             "time": "2015-01-06 17:50:02"
         },
         {
-            "name": "symfony/finder",
-            "version": "v2.5.9",
-            "target-dir": "Symfony/Component/Finder",
+            "name": "symfony/filesystem",
+            "version": "v2.6.3",
+            "target-dir": "Symfony/Component/Filesystem",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/Finder.git",
-                "reference": "e527ebf47ff912a45e148b7d0b107b80ec0b3cc2"
+                "url": "https://github.com/symfony/Filesystem.git",
+                "reference": "a1f566d1f92e142fa1593f4555d6d89e3044a9b7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Finder/zipball/e527ebf47ff912a45e148b7d0b107b80ec0b3cc2",
-                "reference": "e527ebf47ff912a45e148b7d0b107b80ec0b3cc2",
+                "url": "https://api.github.com/repos/symfony/Filesystem/zipball/a1f566d1f92e142fa1593f4555d6d89e3044a9b7",
+                "reference": "a1f566d1f92e142fa1593f4555d6d89e3044a9b7",
                 "shasum": ""
             },
             "require": {
@@ -320,12 +230,12 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.5-dev"
+                    "dev-master": "2.6-dev"
                 }
             },
             "autoload": {
                 "psr-0": {
-                    "Symfony\\Component\\Finder\\": ""
+                    "Symfony\\Component\\Filesystem\\": ""
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -342,9 +252,9 @@
                     "email": "fabien@symfony.com"
                 }
             ],
-            "description": "Symfony Finder Component",
+            "description": "Symfony Filesystem Component",
             "homepage": "http://symfony.com",
-            "time": "2015-01-03 08:01:13"
+            "time": "2015-01-03 21:13:09"
         }
     ],
     "packages-dev": [],

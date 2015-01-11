@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE project>
+<project name="Release manager" basedir="." default="build">
+	
+	<property name="build.dir" value="${basedir}/build" />
+	<property name="dist.dir" value="${basedir}/dist" />
+	
+	
+	<fileset id="package" dir="${basedir}">
+		<include name="bin/**/*" />
+		<include name="src/**/*" />
+		<include name="lib/**/*" />
+		<include name="composer.json" />
+		<include name="composer.lock" />
+	</fileset>
+	
+	
+	<target name="clean">
+		<delete dir="${build.dir}"></delete>
+		<delete dir="${dist.dir}"></delete>
+	</target>
+	
+	<target name="build" depends="clean">
+		
+		<echo>Copy files</echo>
+		<copy todir="${build.dir}" >
+			<fileset refid="package"></fileset>
+		</copy>
+		
+		<echo>Fix permissions</echo>
+		<chmod perm="+x">
+			<fileset dir="${build.dir}">
+				<include name="bin/*" />
+				<exclude name="bin/*.php" />
+			</fileset>
+		</chmod>
+		
+		<echo>Setup composer</echo>
+		<get dest="${build.dir}/composer-installer" src="https://getcomposer.org/installer" />
+		<exec executable="php" dir="${build.dir}" failonerror="true">
+			<arg file="${build.dir}/composer-installer" />
+		</exec>
+		<delete file="${build.dir}/composer-installer" />
+		
+		<echo>Run composer</echo>
+		<exec executable="php" dir="${build.dir}" failonerror="true">
+			<arg file="${build.dir}/composer.phar" />
+			<arg line="install" />
+			<arg line="--no-dev" />
+			<arg line="--optimize-autoloader" />
+		</exec>
+		
+		<delete failonerror="true" verbose="true">
+			<fileset dir="${build.dir}">
+				<include name="composer.*" />
+				<exclude name="composer.json" />
+			</fileset>
+		</delete>
+		
+	</target>
+	
+	<target name="phar" depends="build">
+		<echo>Compiling phar</echo>
+		<exec executable="bin/compile" dir="${build.dir}" />
+		<chmod perm="+x" file="${build.dir}/release-manager.phar" />
+	</target>
+
+</project>

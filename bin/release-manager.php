@@ -1,5 +1,5 @@
 <?php
-namespace Omez\ReleaseManager;
+namespace Deliveryman\ReleaseManager;
 
 use Symfony\Component\Console\Application;
 
@@ -20,8 +20,5 @@ foreach ($iterator as $file) {
 		$application->add($file);
 	}
 }
-
-
-
 
 $application->run();
