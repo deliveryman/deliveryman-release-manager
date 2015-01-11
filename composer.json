@@ -10,7 +10,7 @@
 			"email" : "alexander.sergeychik@gmail.com"
 		}
 	],
-	"description" : "Manages releases on remote server",
+	"description" : "Release manager",
 	"type" : "project",
 	"license" : "MIT",
 	"autoload" : {
