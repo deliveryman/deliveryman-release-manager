@@ -19,11 +19,11 @@ abstract class AbstractCommand extends Command {
 	protected function configure() {
 		
 		$this->addOption('profile', null, InputOption::VALUE_REQUIRED, 'Path to profile file');
-		$this->addOption('host', null, InputOption::VALUE_REQUIRED, 'Connection host');
-		$this->addOption('user', null, InputOption::VALUE_REQUIRED, 'Connection username');
-		$this->addOption('password', null, InputOption::VALUE_REQUIRED, 'Connection password');
+		$this->addOption('ssh-hostname', null, InputOption::VALUE_REQUIRED, 'Connection host');
+		$this->addOption('ssh-username', null, InputOption::VALUE_REQUIRED, 'Connection username');
+		$this->addOption('ssh-password', null, InputOption::VALUE_REQUIRED, 'Connection password');
 		$this->addOption('ssh-key', null, InputOption::VALUE_REQUIRED, 'Connection SSH key path');
-		$this->addOption('ssh-passphrase', null, InputOption::VALUE_REQUIRED, 'Connection SSH key passphrase');
+		$this->addOption('ssh-key-passphrase', null, InputOption::VALUE_REQUIRED, 'Connection SSH key passphrase');
 		$this->addOption('basepath', null, InputOption::VALUE_REQUIRED, 'Connection base path', '.');
 		
 	}
@@ -39,11 +39,11 @@ abstract class AbstractCommand extends Command {
 		// @todo add profile reading
 		
 		$config = array(
-			'hostname' => $input->getOption('host'),
-			'username' => $input->getOption('user'),
-			'password' => $input->getOption('password'),
+			'hostname' => $input->getOption('ssh-hostname'),
+			'username' => $input->getOption('ssh-username'),
+			'password' => $input->getOption('ssh-password'),
 			'ssh_key' => $input->getOption('ssh-key'),
-			'ssh_key_passphrase' => $input->getOption('ssh-passphrase'),
+			'ssh_key_passphrase' => $input->getOption('ssh-key-passphrase'),
 		);
 
 		$factory = new ConnectionFactory();
