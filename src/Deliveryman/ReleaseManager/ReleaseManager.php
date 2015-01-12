@@ -69,6 +69,16 @@ class ReleaseManager {
 	}
 
 	/**
+	 * Returns release path
+	 * 
+	 * @param string $name
+	 * @return string
+	 */
+	public function getReleasePath($name) {
+		return $this->getReleasesPath() . '/' . $name;
+	}
+	
+	/**
 	 * Returns path to releases directory
 	 *
 	 * @return string
@@ -136,7 +146,82 @@ class ReleaseManager {
 			
 	}
 
+	/**
+	 * Creates release with specified name
+	 * 
+	 * @param string $name - release name
+	 * @param array $artifacts - artifacts paths
+	 * @param array $shared - shared resources paths
+	 * @throws ReleaseManagerException
+	 * @return string - new release name
+	 */
+	public function createRelease($name, array $artifacts, array $shared = array()) {
+		$connection = $this->getConnection();
+
+		// create release directory
+		$releasePath = $this->getReleasePath($name);
+		if ($connection->exists($releasePath)) {
+			$connection->delete($releasePath, true);
+		}
+		$connection->mkdir($this->getReleasesPath() . '/' . $name);
+		
+		// transfer artifacts		
+		foreach ($artifacts as $artifact) {
+			if (realpath($artifact) === false) {
+				throw new ReleaseManagerException(sprintf('Artifact "%s" does not exists', $artifact));	
+			}
+			
+			if (realpath(dirname($artifact)) == realpath($artifact)) {
+				$artifactPath = $releasePath;
+			} else {
+				$artifactName = pathinfo($artifact, PATHINFO_BASENAME);
+				$artifactPath = $releasePath . '/' . $artifactName;
+			}
+			$connection->upload($artifactPath, $artifact);
+		}
+		
+		// bind shared resources
+		foreach ($shared as $resource) {
+
+			$sharedPath = $this->getSharedPath() . '/' . $resource;
+			$releaseSharedPath = $releasePath . '/' . $resource;
+			
+			if ($connection->exists($sharedPath)) {
+				if ($connection->exists($releaseSharedPath)) {
+					$connection->delete($releaseSharedPath, true);
+				} elseif (!$connection->isDir(dirname($releaseSharedPath))) {
+					$connection->mkdir(dirname($releaseSharedPath), null, true);
+				}
+				$connection->symlink($sharedPath, $releaseSharedPath);
+			}						
+			
+		}		
+		
+		return $name;
+	}
 	
+	/**
+	 * Returns weither release with $name exists 
+	 * 
+	 * @param string $name
+	 * @return boolean
+	 */	
+	public function hasRelease($name) {
+		$connection = $this->getConnection();
+		$releasePath = $this->getReleasePath($name);
+		return $connection->isDir($releasePath);
+	}
 	
+	/**
+	 * Removes release
+	 * 
+	 * @param string $name
+	 * @return void
+	 */	
+	public function removeRelease($name) {}
+	
+	public function getCurrentRelease() {}
+	public function selectRelease($name) {}
+	public function selectMaintenance() {}
 	
 }
