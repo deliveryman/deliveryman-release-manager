@@ -31,6 +31,13 @@ class ReleaseManager {
 	protected $basePath;
 
 	/**
+	 * Absolute base path
+	 *
+	 * @var string
+	 */
+	private $absoluteBasePathCache;
+
+	/**
 	 * Constructs manager
 	 *
 	 * @param Connection $connection        	
@@ -51,62 +58,69 @@ class ReleaseManager {
 	}
 
 	/**
-	 * Returns path to base directory
+	 * Returns path to base directory.
 	 *
+	 * @param boolean $absolute
+	 *        	- return absolute path
 	 * @return string
 	 */
-	public function getBasePath() {
-		return $this->basePath;
+	public function getBasePath($absolute = false) {
+		if ($absolute) {
+			if ($this->absoluteBasePathCache) return $this->absoluteBasePathCache;
+			$absoluteBasePath = $this->getConnection()->realpath($this->basePath);
+			$this->absoluteBasePathCache = $absoluteBasePath;
+			return $absoluteBasePath;
+		} else {
+			return $this->basePath;
+		}
 	}
 
 	/**
-	 * Returns path to current directory
+	 * Returns path to current directory.
 	 *
+	 * @param boolean $absolute
+	 *        	- return absolute path
 	 * @return string
 	 */
-	public function getReleasesPath() {
-		return $this->getBasePath() . '/' . self::RELEASES_NAME;
+	public function getReleasesPath($absolute = false) {
+		return $this->getBasePath($absolute) . '/' . self::RELEASES_NAME;
 	}
 
 	/**
-	 * Returns release path
-	 * 
-	 * @param string $name
-	 * @return string
-	 */
-	public function getReleasePath($name) {
-		return $this->getReleasesPath() . '/' . $name;
-	}
-	
-	/**
-	 * Returns path to releases directory
+	 * Returns path to releases directory.
 	 *
+	 * @param boolean $absolute
+	 *        	- return absolute path
 	 * @return string
 	 */
-	public function getCurrentPath() {
-		return $this->getBasePath() . '/' . self::CURRENT_NAME;
-	}
-	
-	/**
-	 * Returns path to shared directory
-	 * 
-	 * @return string
-	 */
-	public function getSharedPath() {
-		return $this->getBasePath() . '/' . self::SHARED_NAME;
-	}
-	
-	/**
-	 * Returns path to maintenance directory
-	 * 
-	 * @return string
-	 */
-	public function getMaintenancePath() {
-		return $this->getBasePath() . '/' . self::MAINTENANCE_NAME;
+	public function getCurrentPath($absolute = false) {
+		return $this->getBasePath($absolute) . '/' . self::CURRENT_NAME;
 	}
 
 	/**
-	 * Setups remote file structure
+	 * Returns path to shared directory.
+	 * 
+	 * @param boolean $absolute
+	 *        	- return absolute path
+	 * @return string
+	 */
+	public function getSharedPath($absolute = false) {
+		return $this->getBasePath($absolute) . '/' . self::SHARED_NAME;
+	}
+
+	/**
+	 * Returns path to maintenance directory.
+	 * 
+	 * @param boolean $absolute
+	 *        	- return absolute path
+	 * @return string
+	 */
+	public function getMaintenancePath($absolute = false) {
+		return $this->getBasePath($absolute) . '/' . self::MAINTENANCE_NAME;
+	}
+
+	/**
+	 * Setups remote file structure.
 	 *
 	 * @return void
 	 * @throws ReleaseManagerException
@@ -114,7 +128,7 @@ class ReleaseManager {
 	public function setup() {
 		$connection = $this->getConnection();
 		try {
-		
+			
 			// check if base dir exists
 			if (!$connection->isDir($this->getBasePath())) {
 				throw new ReleaseManagerException(sprintf('Base directory "%s" is not exists', $this->getBasePath()));
@@ -143,41 +157,239 @@ class ReleaseManager {
 		} catch (\Exception $e) {
 			throw new ReleaseManagerException(sprintf('Unable to setup initial structure: %s', $e->getMessage()), null, $e);
 		}
-			
-	}
 	
-	/**
-	 * Returns currently installed releases
-	 * 
-	 * @return array
-	 */
-	public function getReleases() {
-		return array();
 	}
 
 	/**
-	 * Creates release with specified name
-	 * 
-	 * @param string $name - release name
-	 * @param array $artifacts - artifacts paths
-	 * @param array $shared - shared resources paths
+	 * Returns currently installed releases.
+	 *
+	 * @param boolean $absolute - return absolute release paths
+	 * @return array
+	 */
+	public function getReleases($absolute = false) {
+		
+		$connection = $this->getConnection();
+		$list = $connection->rawls($this->getReleasesPath());
+		
+		// convert to release-name / path
+		$releaseMap = array();
+		foreach ($list as $path => $info) {
+			if ($info['type'] == 2) {
+				$releaseMap[$this->getReleasesPath($absolute) . '/' . $path] = $path;
+			}
+		}
+		
+		// validate over paths
+		foreach ($releaseMap as $path => $name) {
+			if ($path != $this->getReleasePath($name, $absolute)) {
+				throw new ReleaseManagerException(sprintf('Unexpected release path "%s" against expected "%"', $path, $this->getReleasePath($name)));
+			}
+		}
+		
+		return $releaseMap;
+	}
+
+	/**
+	 * Returns release path.
+	 *
+	 * @param string $name        	
+	 * @param boolean $absolute
+	 *        	- return absolute path
+	 * @return string
+	 */
+	public function getReleasePath($name, $absolute = false) {
+		return $this->getReleasesPath($absolute) . '/' . $name;
+	}
+
+	/**
+	 * Returns weither release with $name exists.
+	 *
+	 * @param string $name        	
+	 * @return boolean
+	 */
+	public function hasRelease($name) {
+		$connection = $this->getConnection();
+		$releasePath = $this->getReleasePath($name);
+		return $connection->isDir($releasePath);
+	}
+
+	/**
+	 * Creates release with specified name.
+	 *
+	 * @param string $name
+	 *        	- release name
+	 * @param array $artifacts
+	 *        	- artifacts paths
+	 * @param boolean $replace
+	 *        	- replace release if exists
+	 * @param array $shared
+	 *        	- shared resources paths
 	 * @throws ReleaseManagerException
 	 * @return string - new release name
 	 */
-	public function createRelease($name, array $artifacts, array $shared = array()) {
-		$connection = $this->getConnection();
-
-		// create release directory
-		$releasePath = $this->getReleasePath($name);
-		if ($connection->exists($releasePath)) {
-			$connection->delete($releasePath, true);
-		}
-		$connection->mkdir($this->getReleasesPath() . '/' . $name);
+	public function createRelease($name, array $artifacts, $replace = false, array $shared = array()) {
 		
-		// transfer artifacts		
+		if ($this->hasRelease($name)) {
+			if ($replace) {
+				$this->removeRelease($name);
+			} else {
+				throw new ReleaseManagerException(sprintf('Release with name "%s" already exists', $name));
+			}
+		}
+		
+		$this->createReleaseWithReleasePath($this->getReleasePath($name), $artifacts, false, $shared);
+		
+		return $name;
+	}
+
+	/**
+	 * Removes release.
+	 *
+	 * @param string $name        	
+	 * @param boolean $force
+	 *        	- remove release even it's current
+	 * @return void
+	 */
+	public function removeRelease($name, $force = true) {
+		if (!$this->hasRelease($name)) return;
+		
+		// check if release is current
+		if ($this->getCurrentRelease() == $name) {
+			if ($force) {
+				$this->selectMaintenance();
+			} else {
+				throw new ReleaseManagerException(sprintf('Release "%" is set as current and can\'t be removed'));
+			}
+		}
+		
+		$connection = $this->getConnection();
+		$releasePath = $this->getReleasePath($name);
+		$connection->delete($releasePath, true);
+	
+	}
+
+	/**
+	 * Returns current release name, null when maintenance or false if not
+	 * selected or invalid path.
+	 *
+	 * @return string|false|null
+	 */
+	public function getCurrentRelease() {
+		
+		$connection = $this->getConnection();
+		$target = $connection->readlink($this->getCurrentPath());
+		
+		if ($target == $connection->realpath($this->getMaintenancePath())) {
+			return null;
+		} else {
+			foreach ($this->getReleases(true) as $path => $name) {
+				if ($target == $path) {
+					return $name;
+				}
+			}
+		}
+		
+		return false;
+	}
+
+	/**
+	 * Selects release as current and returns it's name
+	 *
+	 * @param string $name        	
+	 * @throws ReleaseManagerException
+	 * @return string
+	 */
+	public function selectRelease($name) {
+		
+		if (strtolower($name) == 'maintenance') {
+			return $this->selectMaintenance();
+		} elseif (!$this->hasRelease($name)) {
+			throw new ReleaseManagerException(sprintf('Release "%" is not exists'));
+		}
+		
+		$connection = $this->getConnection();
+		$connection->symlink($this->getReleasePath($name), $this->getCurrentPath(), true);
+		
+		return $name;
+	}
+	
+	/**
+	 * Creates maintenance release
+	 * 
+	 * @param array $artifacts
+	 * @param array $shared
+	 * @return void
+	 */
+	public function createMaintenance(array $artifacts, array $shared = array()) {
+		$this->createReleaseWithReleasePath($this->getMaintenancePath(), $artifacts, true, $shared);
+	}
+	
+	/**
+	 * Selects maintenance as current
+	 *
+	 * @return null
+	 */
+	public function selectMaintenance() {
+		$connection = $this->getConnection();
+		$connection->symlink($this->getMaintenancePath(), $this->getCurrentPath(), true);
+	
+		return null;
+	}
+	
+	/**
+	 * Binds shared resource to release
+	 * 
+	 * @param string $name - release name
+	 * @param string $sharedPath - relative path to shared
+	 * @param boolean $ignoreMissing - ignore missing shared resources or not
+	 * @throws ReleaseManagerException
+	 * @return string - binded resource path
+	 */
+	public function bindReleaseShared($name, $sharedPath, $ignoreMissing = true) {
+		if (!$this->hasRelease($name)) {
+			throw new ReleaseManagerException(sprintf('Release "%" is not exists'));
+		}
+		return $this->bindSharedWithReleasePath($this->getReleasePath($name), $sharedPath, $ignoreMissing);
+	}
+
+	/**
+	 * Binds shared resource to maintenance mode release
+	 * 
+	 * @param string $sharedPath - relative path to shared
+	 * @param boolean $ignoreMissing - ignore missing shared resources or not
+	 * @return string - binded resource path
+	 */
+	public function bindMaintenanceShared($sharedPath, $ignoreMissing = true) {
+		return $this->bindSharedWithReleasePath($this->getMaintenancePath(), $sharedPath, $ignoreMissing);
+	}
+	
+	/**
+	 * Creates release on specified path.
+	 * 
+	 * @param string $releasePath
+	 * @param array $artifacts
+	 * @param string $replace - replace path if exists
+	 * @param array $shared
+	 * @throws ReleaseManagerException
+	 */
+	protected function createReleaseWithReleasePath($releasePath, array $artifacts, $replace = false, array $shared = array()) {
+		
+		$connection = $this->getConnection();
+		
+		// create release directory
+		if ($connection->exists($releasePath)) {
+			if ($replace) {
+				$connection->delete($releasePath, true);
+			} else {
+				throw new ReleaseManagerException(sprintf('Release path "%s" already exists and replacement flag not enabled', $releasePath));
+			}
+		}
+		$connection->mkdir($releasePath);
+		
+		// transfer artifacts
 		foreach ($artifacts as $artifact) {
 			if (realpath($artifact) === false) {
-				throw new ReleaseManagerException(sprintf('Artifact "%s" does not exists', $artifact));	
+				throw new ReleaseManagerException(sprintf('Artifact "%s" does not exists', $artifact));
 			}
 			if (realpath(dirname($artifact)) == realpath($artifact)) {
 				$artifactPath = $releasePath;
@@ -185,52 +397,50 @@ class ReleaseManager {
 				$artifactName = pathinfo(realpath($artifact), PATHINFO_BASENAME);
 				$artifactPath = $releasePath . '/' . $artifactName;
 			}
-			
+				
 			$connection->upload($artifactPath, $artifact, true);
 		}
 		
 		// bind shared resources
-		/*foreach ($shared as $resource) {
-
-			$sharedPath = $this->getSharedPath() . '/' . $resource;
-			$releaseSharedPath = $releasePath . '/' . $resource;
-			
-			if ($connection->exists($sharedPath)) {
-				if ($connection->exists($releaseSharedPath)) {
-					$connection->delete($releaseSharedPath, true);
-				} elseif (!$connection->isDir(dirname($releaseSharedPath))) {
-					$connection->mkdir(dirname($releaseSharedPath), null, true);
-				}
-				$connection->symlink($sharedPath, $releaseSharedPath);
-			}						
-			
-		}*/		
+		foreach ($shared as $sharedPath) {
+			$this->bindSharedWithReleasePath($releasePath, $sharedPath);
+		}
 		
-		return $name;
 	}
 	
 	/**
-	 * Returns weither release with $name exists 
+	 * Binds shared resource to release path and returns binded path.
 	 * 
-	 * @param string $name
-	 * @return boolean
-	 */	
-	public function hasRelease($name) {
+	 * @param string $releasePath - path to release dir
+	 * @param string $sharedPath - relative shared resource path
+	 * @param boolean $ignoreMissing - ignore missing shared resources or not
+	 * @throws ReleaseManagerException
+	 * @return string
+	 */
+	protected function bindSharedWithReleasePath($releasePath, $sharedPath, $ignoreMissing = false) {
+		
+		$sourcePath = $this->getSharedPath() . '/' . $sharedPath;
+		$destPath = $releasePath . '/' . $sharedPath;
+		
 		$connection = $this->getConnection();
-		$releasePath = $this->getReleasePath($name);
-		return $connection->isDir($releasePath);
+		
+		if ($connection->exists($sourcePath)) {
+			// map shared to destination
+			if ($connection->exists($destPath)) $connection->delete($destPath, true);
+			if (!$connection->exists(dirname($destPath))) $connection->mkdir(dirname($destPath), null, true);
+			$connection->symlink($sourcePath, $destPath);
+			
+		} elseif ($connection->exists($destPath)) {
+			// make initial shared resource mapping	
+			if (!$connection->exists(dirname($sourcePath))) $connection->mkdir(dirname($sourcePath), null, true);
+			$connection->rename($destPath, $sourcePath);
+			$connection->symlink($sourcePath, $destPath);
+			
+		} elseif (!$ignoreMissing) {
+			throw new ReleaseManagerException(sprintf('Shared resource "%s" not exists neither in share nor destination locations', $sharedPath));
+		}
+		
+		return $destPath;
 	}
-	
-	/**
-	 * Removes release
-	 * 
-	 * @param string $name
-	 * @return void
-	 */	
-	public function removeRelease($name) {}
-	
-	public function getCurrentRelease() {}
-	public function selectRelease($name) {}
-	public function selectMaintenance() {}
 	
 }

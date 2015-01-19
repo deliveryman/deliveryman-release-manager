@@ -128,23 +128,32 @@ class CompressTransfer implements TransferInterface {
 		
 		foreach ($filelist as $destination => $local) {
 			
-			if (is_dir($local)) {
-				$iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($local, \RecursiveDirectoryIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST);
-			} elseif (file_exists($local)) {
-				$iterator = new \ArrayIterator(array(
-					new \SplFileInfo(dirname(realpath($local)) . '/' . pathinfo(realpath($local), PATHINFO_BASENAME))
-				));
-			} else {
+			if (!file_exists($local)) {
 				throw new TransferException(sprintf('Local path "%s" not exists', $local));
 			}
 			
+			$local = realpath($local);
+			
+			if (is_dir($local)) {
+				$iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($local, \RecursiveDirectoryIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST);
+			} else {
+				$iterator = new \ArrayIterator(array(
+					new \SplFileInfo($local)
+				));
+			}
+			
 			foreach ($iterator as $file) {
+				
 				if (0 !== strpos($file->getPathname(), $local)) {
 					throw new TransferException(sprintf('Unexpected nested path "%s" of dir "%s"', $file->getPathname(), $local));
 				}
 				$relativePath = ltrim(substr($file->getPathname(), strlen($local)), '/\\');
 				$permissions = fileperms($file->getPathname()) & 0x0FFF;
-				$command = sprintf('chmod %3$s %1$s/%2$s', $destination, $relativePath, decoct($permissions));
+				$destinationPath = implode('/', array_filter(array(
+					$destination,
+					$relativePath
+				)));
+				$command = sprintf('chmod %2$s %1$s', $destinationPath, decoct($permissions));
 				fputs($f, $command . "\n");
 			}
 			

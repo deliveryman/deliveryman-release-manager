@@ -62,7 +62,8 @@
 	<target name="phar" depends="build">
 		<echo>Compiling phar</echo>
 		<exec executable="bin/compile" dir="${build.dir}" failonerror="true" />
-		<chmod perm="+x" file="${build.dir}/release-manager.phar" />
+		<copy file="${build.dir}/release-manager.phar" todir="${dist.dir}" />
+		<chmod perm="+x" file="${dist.dir}/release-manager.phar" />
 	</target>
 
 </project>

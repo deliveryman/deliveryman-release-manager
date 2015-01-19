@@ -160,9 +160,37 @@ class Connection extends AbstractConnection implements TransferInterface {
 	public function unlink($path) {
 		return $this->delete($path, false);
 	}
+	
+	/**
+	 * Return the target of a symbolic link
+	 * 
+	 * @param string $path
+	 * @throws ConnectionException
+	 * @return string
+	 */
+	public function readlink($path) {
+		$gateway = $this->getGateway(true);
+		$result = $gateway->readlink($path);
+		if ($result === false) {
+			throw new ConnectionException(sprintf('Unable to read link "%s": %s', $path, $gateway->getLastSFTPError()));
+		}
+		return $result;
+	}
+	
 
 	/**
-	 * Removes $path
+	 * Returns realpath for $path
+	 * 
+	 * @param string $path
+	 * @return string
+	 */
+	public function realpath($path) {
+		$output = $this->exec('readlink -f ' . $path);
+		return trim(reset($output));
+	}
+
+	/**
+	 * Removes $path.
 	 *
 	 * @param string $path        	
 	 * @param boolean $recursive        	
@@ -177,23 +205,22 @@ class Connection extends AbstractConnection implements TransferInterface {
 		}
 		return $result;
 	}
-
+	
 	/**
-	 * {@inheritDoc}
+	 * Renames a file or a directory on the remote server.
 	 * 
-	 * @see \Deliveryman\Connection\Transfer\TransferInterface::upload()
+	 * @param string $oldname
+	 * @param string $newname
+	 * @throws ConnectionException
+	 * @return boolean
 	 */
-	public function upload($remotePath, $localPath, $keepPermissions = false) {
-		return $this->getTransfer()->upload($remotePath, $localPath, $keepPermissions);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * 
-	 * @see \Deliveryman\Connection\Transfer\TransferInterface::download()
-	 */
-	public function download($remotePath, $localPath, $keepPermissions = false) {
-		return $this->getTransfer()->download($remotePath, $localPath, $keepPermissions);
+	public function rename($oldname, $newname) {
+		$gateway = $this->getGateway(true);
+		$result = $gateway->rename($oldname, $newname);
+		if ($result === false) {
+			throw new ConnectionException(sprintf('Unable to renamce "%s" to "%s": %s', $oldname, $newname, $gateway->getLastSFTPError()));
+		}
+		return $result;
 	}
 
 	/**
@@ -213,6 +240,54 @@ class Connection extends AbstractConnection implements TransferInterface {
 		}
 		return $result;
 	}
+	
+	/**
+	 * Returns a list of files in the given directory. Dots are skipped
+	 * 
+	 * @param string $dirname
+	 * @param string $recursive
+	 * @return array
+	 */
+	public function ls($dirname, $recursive = false) {
+		$list = $this->getGateway(true)->nlist($dirname, $recursive);
+		if ($list === false) {
+			throw new ConnectionException(sprintf('Unable to list directory "%s": %s', $dirname, $this->getGateway(false)->getLastSFTPError()));
+		}
+		
+		// filter dots
+		foreach ($list as $key=>$path) {
+			if (preg_match('/^\.+$/', $path)) {
+				unset($list[$key]);
+			}
+		}
+		return $list;
+	}
+	
+	/**
+	 * Returns a raw list of files in the given directory. Dots are skipped
+	 * 
+	 * @param string $dirname
+	 * @param string $recursive
+	 * @return array
+	 */
+	public function rawls($dirname, $recursive = false) {
+		$list = $this->getGateway(true)->rawlist($dirname, $recursive);
+		if ($list === false) {
+			throw new ConnectionException(sprintf('Unable to list directory "%s": %s', $dirname, $this->getGateway(false)->getLastSFTPError()));
+		}
+		
+		// filter dots
+		foreach (array_keys($list) as $path) {
+			if (preg_match('/^\.+$/', $path)) {
+				unset($list[$path]);
+			}
+		}
+		return $list;
+	}
+	
+	
+	
+	
 
 	/**
 	 * Executes command.
@@ -265,6 +340,24 @@ class Connection extends AbstractConnection implements TransferInterface {
 		}
 		
 		return $output;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see \Deliveryman\Connection\Transfer\TransferInterface::upload()
+	 */
+	public function upload($remotePath, $localPath, $keepPermissions = false) {
+		return $this->getTransfer()->upload($remotePath, $localPath, $keepPermissions);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see \Deliveryman\Connection\Transfer\TransferInterface::download()
+	 */
+	public function download($remotePath, $localPath, $keepPermissions = false) {
+		return $this->getTransfer()->download($remotePath, $localPath, $keepPermissions);
 	}
 
 }
