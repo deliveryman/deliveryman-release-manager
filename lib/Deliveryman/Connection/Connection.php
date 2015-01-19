@@ -2,75 +2,145 @@
 
 namespace Deliveryman\Connection;
 
+use Deliveryman\Connection\Transfer\TransferInterface;
+use Deliveryman\Connection\Transfer\DefaultTransfer;
+
 /**
  * Default connection implementation
- * 
+ *
  * @author Alexander Sergeychik
  */
-class Connection extends AbstractConnection {
+class Connection extends AbstractConnection implements TransferInterface {
 
+	/**
+	 * Transfer adapter
+	 *
+	 * @var TransferInterface
+	 */
+	protected $transfer;
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @param string $hostname        	
+	 * @param integer $port        	
+	 * @param TransferInterface $transfer        	
+	 */
+	public function __construct($hostname, $port = 22, TransferInterface $transfer = null) {
+		parent::__construct($hostname, $port);
+		if ($transfer !== null) $this->setTransfer($transfer);
+	}
+
+	/**
+	 * Returns transfer interface to connection
+	 *
+	 * @return TransferInterface
+	 */
+	public function getTransfer() {
+		if (!$this->transfer) {
+			$transfer = new DefaultTransfer($this);
+			$this->setTransfer($transfer);
+		}
+		return $this->transfer;
+	}
+
+	/**
+	 * Sets transfer adapter to connection
+	 *
+	 * @param TransferInterface $transfer        	
+	 * @return Connection
+	 */
+	public function setTransfer(TransferInterface $transfer) {
+		$this->transfer = $transfer;
+		return $this;
+	}
+
+	/**
+	 * Checks if $path is directory
+	 *
+	 * @param string $path        	
+	 * @return boolean
+	 */
 	public function isDir($path) {
 		return $this->getGateway(true)->is_dir($path);
 	}
-	
+
+	/**
+	 * Checks if $path is file
+	 *
+	 * @param string $path        	
+	 * @return boolean
+	 */
 	public function isFile($path) {
 		return $this->getGateway(true)->is_file($path);
 	}
-	
+
+	/**
+	 * Checks if $path is link
+	 *
+	 * @param string $path        	
+	 * @return boolean
+	 */
 	public function isLink($path) {
 		return $this->getGateway(true)->is_link($path);
 	}
-	
+
+	/**
+	 * Checks if $path exists
+	 *
+	 * @param string $path        	
+	 * @return boolean
+	 */
 	public function exists($path) {
 		return $this->getGateway(true)->file_exists($path);
 	}
-	
+
 	/**
 	 * Returns filetype for $path
-	 * 
-	 * @param string $path
+	 *
+	 * @param string $path        	
 	 * @return string
 	 * @throws ConnectionException
 	 */
 	public function filetype($path) {
 		$gateway = $this->getGateway(true);
-		$result = $gateway->filetype($path); 
+		$result = $gateway->filetype($path);
 		if ($result === false) {
 			throw new ConnectionException(sprintf('Unable to fetch type of "%s": %s', $path, $gateway->getLastSFTPError()));
 		}
-		return $result; 
+		return $result;
 	}
 
 	/**
 	 * Creates directory
-	 * 
-	 * @param string $dir
-	 * @param integer $mode
-	 * @param boolean $recursive
+	 *
+	 * @param string $dir        	
+	 * @param integer $mode        	
+	 * @param boolean $recursive        	
 	 * @throws ConnectionException
 	 * @return boolean
 	 */
 	public function mkdir($dir, $mode = null, $recursive = false) {
-		$gateway =  $this->getGateway(true);
+		$gateway = $this->getGateway(true);
 		$result = $gateway->mkdir($dir, ($mode === null ? -1 : $mode), $recursive);
 		if ($result === false) {
 			throw new ConnectionException(sprintf('Unable to create directory "%s": %s', $dir, $gateway->getLastSFTPError()));
 		}
 		return $result;
 	}
-	
+
 	/**
 	 * Creates symlink from $target to $link
-	 * 
-	 * @param string $target
-	 * @param string $link
-	 * @param boolean $force
+	 *
+	 * @param string $target        	
+	 * @param string $link        	
+	 * @param boolean $force        	
 	 * @throws ConnectionException
 	 * @return boolean
 	 */
 	public function symlink($target, $link, $force = false) {
 		$gateway = $this->getGateway(true);
-
+		
 		// handle force unlink
 		if ($force && ($this->exists($link))) $this->unlink($link);
 		
@@ -80,22 +150,22 @@ class Connection extends AbstractConnection {
 		}
 		return $result;
 	}
-	
+
 	/**
 	 * Alias to delete() without recursion
-	 * 
-	 * @param string $path
+	 *
+	 * @param string $path        	
 	 * @return boolean
 	 */
 	public function unlink($path) {
 		return $this->delete($path, false);
 	}
-	
+
 	/**
-	 * Removes $path 
-	 * 
-	 * @param string $path
-	 * @param boolean $recursive
+	 * Removes $path
+	 *
+	 * @param string $path        	
+	 * @param boolean $recursive        	
 	 * @throws ConnectionException
 	 * @return boolean
 	 */
@@ -107,93 +177,94 @@ class Connection extends AbstractConnection {
 		}
 		return $result;
 	}
-	
 
 	/**
-	 * Uploads file or resource to remote server
+	 * {@inheritDoc}
 	 * 
-	 * @param string $path
-	 * @param string|resource $local
-	 * @throws ConnectionException
-	 * @return boolean
+	 * @see \Deliveryman\Connection\Transfer\TransferInterface::upload()
 	 */
-	public function upload($path, $local) {
-		if (is_dir($local)) {
-			return $this->uploadDirectory($path, $local);
-		} elseif (is_file($local) || is_resource($local)) {
-			return $this->uploadFile($path, $local);
-		} else {
-			throw new ConnectionException('Local path should be a valid file/directory path or resource');
-		}
+	public function upload($remotePath, $localPath) {
+		return $this->getTransfer()->upload($remotePath, $localPath);
 	}
-	
+
 	/**
-	 * Uploads directory to remote server
+	 * {@inheritDoc}
 	 * 
-	 * @param string $path
-	 * @param string $local
-	 * @throws ConnectionException
+	 * @see \Deliveryman\Connection\Transfer\TransferInterface::download()
 	 */
-	protected function uploadDirectory($path, $local) {
-		if (!is_dir($local)) {
-			throw new ConnectionException('Local path should be a valid directory path');
-		}
-		
-		if (!$this->isDir($path)) {
-			$result = $this->mkdir($path);
-		} else {
-			$result = true;
-		}
-		
-		foreach (new \DirectoryIterator($local) as $file) {
-			if ($file->isDot()) continue;
-			elseif ($file->isDir()) {
-				$result&= $this->uploadDirectory($path . '/' . $file->getFilename(), $file->getPathname());
-			} elseif ($file->isFile()) {
-				$result&= $this->uploadFile($path . '/' . $file->getFilename(), $file->getPathname());
-			} else {
-				throw new ConnectionException(sprintf('Unknown path "%s" in directory upload', $file->getPathname()));
-			}
-		}
-		
-		if ($result === false) {
-			throw new ConnectionException(sprintf('Unable to upload directory "%s": %s', $path, $this->getGateway(false)->getLastSFTPError()));
-		}
-		
-		return true;
+	public function download($remotePath, $localPath) {
+		return $this->getTransfer()->download($remotePath, $localPath);
 	}
-	
+
 	/**
-	 * Uploads file or resource to remote server
-	 * 
-	 * @param string $path
-	 * @param string|resource $local
+	 * Set permissions on a file.
+	 *
+	 * @param int $mode        	
+	 * @param string $filename        	
+	 * @param boolean $recursive        	
 	 * @throws ConnectionException
-	 * @return boolean
+	 * @return int|true - new mode or true when recursive flag is set
 	 */
-	protected function uploadFile($path, $local) {
-		
-		$mode = null;
-		$toClose = null;
-		
-		if (is_string($local) && is_file($local)) {
-			$mode = fileperms($local);
-			$local = fopen($local, 'r');
-			$toClose = true;
-		} elseif (!is_resource($local)) {
-			throw new ConnectionException('Local file should be a valid file path or resource');
-		}
-		
+	public function chmod($mode, $filename, $recursive = false) {
 		$gateway = $this->getGateway(true);
-		$result = $gateway->put($path, $local, NET_SFTP_LOCAL_FILE);
-		
-		if ($mode !== null)	$result&= $gateway->chmod($mode, $path, false);
-		if ($toClose !== null) fclose($local);
-		
+		$result = $gateway->chmod($mode, $filename, $recursive);
 		if ($result === false) {
-			throw new ConnectionException(sprintf('Unable to put local file to "%s": %s', $path, $gateway->getLastSFTPError()));
+			throw new ConnectionException(sprintf('Unable to chmod path "%s": %s', $filename, $this->getGateway(false)->getLastSFTPError()));
 		}
 		return $result;
 	}
-	
+
+	/**
+	 * Executes command.
+	 *
+	 * @param string $command        	
+	 * @param string $pwd
+	 *        	- directory of context
+	 * @param string $callback        	
+	 * @return array - command output lines
+	 */
+	public function exec($command, $pwd = null, $callback = null) {
+		
+		$gateway = $this->getGateway(true);
+		
+		if ($callback && !is_callable($callback)) {
+			throw new ConnectionException('Callback provided to exec() is not valid callable');
+		}
+		
+		if ($pwd && !$this->isDir($pwd)) {
+			throw new ConnectionException(sprintf('Working directory "%s" is not correct', $pwd));
+		}
+		
+		if ($pwd) {
+			$oldPwd = $gateway->pwd();
+			$command = sprintf('cd %s && %s', $pwd, $command);
+		}
+		
+		$output = array();
+		$result = $gateway->exec($command, function ($line) use(&$output, $callback) {
+			$output[] = $line;
+			if ($callback) {
+				call_user_func($callback, $line);
+			}
+		});
+		$status = $gateway->getExitStatus();
+		if ($pwd) $gateway->chdir($oldPwd);
+		
+		if (!$result) {
+			throw new ConnectionException(sprintf('Excution failed: %s', $this->getGateway(false)->getLastSFTPError()));
+		}
+		
+		if ($status != 0) {
+			$msg = array(
+				sprintf('Command returned non-zero exit status %s: %s', $status, $this->getGateway(false)->getLastSFTPError()),
+				sprintf('Command: %s', $command),
+				sprintf('Pwd: %s', $pwd ? $pwd : '.'),
+				sprintf("Output: \n    %s", implode("\n    ", $output))
+			);
+			throw new ConnectionException(implode("\n", $msg));
+		}
+		
+		return $output;
+	}
+
 }

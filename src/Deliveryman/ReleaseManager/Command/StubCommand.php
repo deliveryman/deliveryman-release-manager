@@ -11,8 +11,6 @@ class StubCommand extends Command {
 		$this->setDescription('Stub description');
 		
 		$this->setAliases(array(
-			'release:create',
-			'release:select',
 			'maintenance:enable',
 			'maintenance:disable',
 			'clean',

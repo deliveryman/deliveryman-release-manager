@@ -11,7 +11,7 @@ use System_SSH_Agent;
  *
  * @author Alexander Sergeychik
  */
-abstract class AbstractConnection  {
+abstract class AbstractConnection {
 
 	/**
 	 * Undelying connection
@@ -110,7 +110,7 @@ abstract class AbstractConnection  {
 
 	/**
 	 * Sets username
-	 * 
+	 *
 	 * @param string $username        	
 	 */
 	public function setUsername($username) {
@@ -131,12 +131,12 @@ abstract class AbstractConnection  {
 	/**
 	 * Sets credentials
 	 *
-	 * @param string|Crypt_RSA|System_SSH_Agent	$credentials
+	 * @param string|Crypt_RSA|System_SSH_Agent $credentials        	
 	 */
 	public function setCredentials($credentials) {
 		if (!is_string($credentials) && !$credentials instanceof Crypt_RSA && !$credentials instanceof System_SSH_Agent) {
 			$type = is_object($credentials) ? get_class($credentials) : gettype($credentials);
-			throw new \InvalidArgumentException(sprintf('Credentials should be a string, an instance of Crypt_RSA or System_SSH_Agent, %s provided', $type));			
+			throw new \InvalidArgumentException(sprintf('Credentials should be a string, an instance of Crypt_RSA or System_SSH_Agent, %s provided', $type));
 		}
 		$this->credentials = $credentials;
 		$this->reset();
@@ -146,7 +146,8 @@ abstract class AbstractConnection  {
 	/**
 	 * Returns connection gateway
 	 *
-	 * @param boolean $autoconnect - connect automatically when getting gateway
+	 * @param boolean $autoconnect
+	 *        	- connect automatically when getting gateway
 	 * @return Net_SFTP
 	 */
 	public function getGateway($autoconnect = true) {
@@ -175,7 +176,7 @@ abstract class AbstractConnection  {
 
 	/**
 	 * Resets connection
-	 * 
+	 *
 	 * @return void
 	 */
 	public function reset() {
@@ -184,5 +185,5 @@ abstract class AbstractConnection  {
 			$this->gateway = null;
 		}
 	}
-		
+
 }

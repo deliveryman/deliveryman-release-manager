@@ -4,7 +4,10 @@
 	"require" : {
 		"symfony/console" : "~2.6",
 		"symfony/config" : "~2.6",
-		"phpseclib/phpseclib" : "~0.3"
+		"phpseclib/phpseclib" : "~0.3",
+		"symfony/yaml" : "~2.6",
+		"symfony/var-dumper" : "~2.6",
+		"alchemy/zippy" : "~0.2"
 	},
 	"authors" : [{
 			"name" : "Alexander Sergeychik",

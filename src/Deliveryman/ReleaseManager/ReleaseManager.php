@@ -145,6 +145,15 @@ class ReleaseManager {
 		}
 			
 	}
+	
+	/**
+	 * Returns currently installed releases
+	 * 
+	 * @return array
+	 */
+	public function getReleases() {
+		return array();
+	}
 
 	/**
 	 * Creates release with specified name
@@ -170,18 +179,18 @@ class ReleaseManager {
 			if (realpath($artifact) === false) {
 				throw new ReleaseManagerException(sprintf('Artifact "%s" does not exists', $artifact));	
 			}
-			
 			if (realpath(dirname($artifact)) == realpath($artifact)) {
 				$artifactPath = $releasePath;
 			} else {
-				$artifactName = pathinfo($artifact, PATHINFO_BASENAME);
+				$artifactName = pathinfo(realpath($artifact), PATHINFO_BASENAME);
 				$artifactPath = $releasePath . '/' . $artifactName;
 			}
+			
 			$connection->upload($artifactPath, $artifact);
 		}
 		
 		// bind shared resources
-		foreach ($shared as $resource) {
+		/*foreach ($shared as $resource) {
 
 			$sharedPath = $this->getSharedPath() . '/' . $resource;
 			$releaseSharedPath = $releasePath . '/' . $resource;
@@ -195,7 +204,7 @@ class ReleaseManager {
 				$connection->symlink($sharedPath, $releaseSharedPath);
 			}						
 			
-		}		
+		}*/		
 		
 		return $name;
 	}
