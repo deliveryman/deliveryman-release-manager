@@ -153,7 +153,7 @@ class CompressTransfer implements TransferInterface {
 					$destination,
 					$relativePath
 				)));
-				$command = sprintf('chmod %2$s %1$s', $destinationPath, decoct($permissions));
+				$command = sprintf('chmod %2$s %1$s', escapeshellarg($destinationPath), decoct($permissions));
 				fputs($f, $command . "\n");
 			}
 			
