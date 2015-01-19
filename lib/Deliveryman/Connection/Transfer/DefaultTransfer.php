@@ -41,7 +41,7 @@ class DefaultTransfer implements TransferInterface {
 	 * 
 	 * @see \Deliveryman\Connection\Transfer\AbstractTransfer::upload()
 	 */
-	public function upload($remotePath, $localPath, $keeppems = true) {
+	public function upload($remotePath, $localPath, $keeppems = false) {
 		
 		$connection = $this->getConnection();
 		
@@ -75,7 +75,7 @@ class DefaultTransfer implements TransferInterface {
 	 * {@inheritDoc}
 	 * @see \Deliveryman\Connection\Transfer\TransferInterface::download()
 	 */
-	public function download($remotePath, $localPath, $keepperm = true) {
+	public function download($remotePath, $localPath, $keepperm = false) {
 		throw new TransferException('Downloading is not supported');
 	}
 

@@ -186,7 +186,7 @@ class ReleaseManager {
 				$artifactPath = $releasePath . '/' . $artifactName;
 			}
 			
-			$connection->upload($artifactPath, $artifact);
+			$connection->upload($artifactPath, $artifact, true);
 		}
 		
 		// bind shared resources

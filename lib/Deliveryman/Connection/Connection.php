@@ -183,8 +183,8 @@ class Connection extends AbstractConnection implements TransferInterface {
 	 * 
 	 * @see \Deliveryman\Connection\Transfer\TransferInterface::upload()
 	 */
-	public function upload($remotePath, $localPath) {
-		return $this->getTransfer()->upload($remotePath, $localPath);
+	public function upload($remotePath, $localPath, $keepPermissions = false) {
+		return $this->getTransfer()->upload($remotePath, $localPath, $keepPermissions);
 	}
 
 	/**
@@ -192,8 +192,8 @@ class Connection extends AbstractConnection implements TransferInterface {
 	 * 
 	 * @see \Deliveryman\Connection\Transfer\TransferInterface::download()
 	 */
-	public function download($remotePath, $localPath) {
-		return $this->getTransfer()->download($remotePath, $localPath);
+	public function download($remotePath, $localPath, $keepPermissions = false) {
+		return $this->getTransfer()->download($remotePath, $localPath, $keepPermissions);
 	}
 
 	/**

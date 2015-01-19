@@ -52,11 +52,14 @@ class CompressTransfer implements TransferInterface {
 	 */
 	public function upload($remotePath, $localPath, $keepPermissions = false) {
 		
-		// compress local artifact
 		$archiveLocal = pathinfo($remotePath, PATHINFO_BASENAME);
-		$compressedSourcePath = $this->getCompressed(array(
+		
+		$filelist = array(
 			$archiveLocal => $localPath
-		));
+		);
+		
+		// compress local artifact
+		$compressedSourcePath = $this->getCompressed($filelist);
 		$compressedDestPath = dirname($remotePath) . '/' . pathinfo($compressedSourcePath, PATHINFO_BASENAME) . '.tar.gz';
 
 		// upload artifact to remote host
@@ -68,9 +71,14 @@ class CompressTransfer implements TransferInterface {
 		$connection->exec('tar -xf ' . pathinfo($compressedDestPath, PATHINFO_BASENAME), dirname($compressedDestPath));
 		$connection->delete($compressedDestPath);
 
-		// resolving permissions
+		// fixing permissions
 		if ($keepPermissions) {
-			// @todo						
+			$mapSourcePath = $this->getPermissionsMap($filelist);
+			$mapDestPath = dirname($remotePath) . '/' . pathinfo($mapSourcePath, PATHINFO_BASENAME) . '.map';
+			$this->getDriver()->upload($mapDestPath, $mapSourcePath, $keepPermissions);
+			unlink($mapSourcePath);
+			$connection->exec('. ' . pathinfo($mapDestPath, PATHINFO_BASENAME), dirname($mapDestPath));
+			$connection->delete($mapDestPath);
 		}
 		
 	}
@@ -99,6 +107,53 @@ class CompressTransfer implements TransferInterface {
 		return $archivePath;
 	}
 	
+	/**
+	 * Creates permissions map file and returns path to it
+	 * 
+	 * @param array $filelist
+	 * @param string $mapPath
+	 * @return string
+	 */
+	protected function getPermissionsMap(array $filelist, $mapPath = null) {
+		if (!$mapPath) {
+			$mapPath = tempnam(sys_get_temp_dir(), 'release_manager_'.time());
+		}
+		
+		$f = fopen($mapPath, 'w');
+		if (!$f) {
+			throw new TransferException(sprintf('Unable to create map file at "%"', $mapPath));
+		}
+		
+		//fputs($f, '#!/usr/bin/env sh' . "\n");
+		
+		foreach ($filelist as $destination => $local) {
+			
+			if (is_dir($local)) {
+				$iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($local, \RecursiveDirectoryIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST);
+			} elseif (file_exists($local)) {
+				$iterator = new \ArrayIterator(array(
+					new \SplFileInfo(dirname(realpath($local)) . '/' . pathinfo(realpath($local), PATHINFO_BASENAME))
+				));
+			} else {
+				throw new TransferException(sprintf('Local path "%s" not exists', $local));
+			}
+			
+			foreach ($iterator as $file) {
+				if (0 !== strpos($file->getPathname(), $local)) {
+					throw new TransferException(sprintf('Unexpected nested path "%s" of dir "%s"', $file->getPathname(), $local));
+				}
+				$relativePath = ltrim(substr($file->getPathname(), strlen($local)), '/\\');
+				$permissions = fileperms($file->getPathname()) & 0x0FFF;
+				$command = sprintf('chmod %3$s %1$s/%2$s', $destination, $relativePath, decoct($permissions));
+				fputs($f, $command . "\n");
+			}
+			
+		}
+		
+		fclose($f);
+		
+		return $mapPath;
+	}
 	
 	
 	/**
