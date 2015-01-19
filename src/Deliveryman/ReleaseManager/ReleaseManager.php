@@ -478,23 +478,23 @@ class ReleaseManager {
 			
 			// archive upload
 			case self::ARTIFACT_ARCHIVE:
-				$extension = pathinfo($artifactPath, PATHINFO_EXTENSION);
-				$remotePath = $releasePath . '/___' . time() . ( $extension ? sprintf('.%s', $extension) : '');
+				$remotePath = $releasePath . '/___release_manager_' . time() . pathinfo($artifactPath, PATHINFO_BASENAME);
 				$connection->upload($remotePath, $artifactPath, true);
 				
-				switch (strtolower($extension)) {
+				switch (true) {
 					
-					case 'tar.gz':
-					case 'tgz':
+					// tar.gz archive
+					case preg_match('/\.(tar\.gz|tgz)$/', $artifactPath):
 						$command = sprintf('tar -xf %s -C %s', escapeshellarg($remotePath), escapeshellarg($releasePath));
 						break;
 					
-					case 'zip':
+					// zip archive
+					case preg_match('/\.(zip)$/', $artifactPath):
 						$command = sprintf('unzip -o %s -d %s', escapeshellarg($remotePath), escapeshellarg($releasePath));
 						break;
 						
 					default: 
-						throw new ReleaseManagerException(sprintf('Unsupported archive type "%s"', $extension));
+						throw new ReleaseManagerException(sprintf('Unsupported archive type of "%s"', $artifactPath));
 						break;
 				}
 				$connection->exec($command);
