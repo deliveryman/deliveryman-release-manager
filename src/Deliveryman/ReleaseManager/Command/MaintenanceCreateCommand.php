@@ -48,16 +48,16 @@ class MaintenanceCreateCommand extends AbstractCommand {
 		
 		// uploading artifacts
 		foreach ($input->getOption('archive') as $artifactPath) {
-			$uploadedArtifactPath = $releaseManager->uploadMaintenance($artifactPath, ReleaseManager::ARTIFACT_ARCHIVE, false);
-			$output->writeln(sprintf('Uploaded archive <comment>%s</comment> contents', $artifactPath, $uploadedArtifactPath));
+			$output->writeln(sprintf('Uploading archive <comment>%s</comment> contents', $artifactPath));
+			$releaseManager->uploadMaintenance($artifactPath, ReleaseManager::ARTIFACT_ARCHIVE, false);
 		}
 		foreach ($input->getOption('dir') as $artifactPath) {
-			$uploadedArtifactPath = $releaseManager->uploadRelease($artifactPath, ReleaseManager::ARTIFACT_DIR, false);
-			$output->writeln(sprintf('Uploaded directory <comment>%s</comment> contents', $artifactPath, $uploadedArtifactPath));
+			$output->writeln(sprintf('Uploading directory <comment>%s</comment> contents', $artifactPath));
+			$releaseManager->uploadRelease($artifactPath, ReleaseManager::ARTIFACT_DIR, false);
 		}
 		foreach ($input->getOption('file') as $artifactPath) {
-			$uploadedArtifactPath = $releaseManager->uploadRelease($artifactPath, ReleaseManager::ARTIFACT_FILE, false);
-			$output->writeln(sprintf('Uploaded file/dir <comment>%s</comment>', $artifactPath, $uploadedArtifactPath));
+			$output->writeln(sprintf('Uploading file/dir <comment>%s</comment>', $artifactPath));
+			$releaseManager->uploadRelease($artifactPath, ReleaseManager::ARTIFACT_FILE, false);
 		}
 		
 		// bind maintenance shared files
