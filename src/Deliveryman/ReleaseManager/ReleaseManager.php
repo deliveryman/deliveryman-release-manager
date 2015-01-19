@@ -15,6 +15,11 @@ class ReleaseManager {
 	const RELEASES_NAME = 'releases';
 	const SHARED_NAME = 'shared';
 	const MAINTENANCE_NAME = 'maintenance';
+	
+	const ARTIFACT_ARCHIVE = 'archive';
+	const ARTIFACT_FILE = 'file';
+	const ARTIFACT_DIR = 'dir';
+	
 
 	/**
 	 * Connection
@@ -218,16 +223,12 @@ class ReleaseManager {
 	 *
 	 * @param string $name
 	 *        	- release name
-	 * @param array $artifacts
-	 *        	- artifacts paths
 	 * @param boolean $replace
 	 *        	- replace release if exists
-	 * @param array $shared
-	 *        	- shared resources paths
 	 * @throws ReleaseManagerException
 	 * @return string - new release name
 	 */
-	public function createRelease($name, array $artifacts, $replace = false, array $shared = array()) {
+	public function createRelease($name, $replace = false) {
 		
 		if ($this->hasRelease($name)) {
 			if ($replace) {
@@ -237,10 +238,28 @@ class ReleaseManager {
 			}
 		}
 		
-		$this->createReleaseWithReleasePath($this->getReleasePath($name), $artifacts, false, $shared);
+		$connection = $this->getConnection();
+		$connection->mkdir($this->getReleasePath($name));
 		
 		return $name;
 	}
+	
+	/**
+	 * Uploads artifact to release
+	 * 
+	 * @param string $name
+	 * @param string $artifact
+	 * @param string $type
+	 * @param boolean $overwrite
+	 * @throws ReleaseManagerException
+	 */
+	public function uploadRelease($name, $artifact, $type = self::ARTIFACT_FILE, $overwrite = true) {
+		if (!$this->hasRelease($name)) {
+			throw new ReleaseManagerException(sprintf('Release "%" is not exists'));
+		}
+		return $this->uploadArtifactToPath($this->getReleasePath($name), $artifact, $type, $overwrite);
+	}
+	
 
 	/**
 	 * Removes release.
@@ -314,30 +333,42 @@ class ReleaseManager {
 	}
 	
 	/**
-	 * Creates maintenance release
+	 * Upload maintenance.
 	 * 
-	 * @param array $artifacts
-	 * @param array $shared
+	 * @param string $artifact
+	 * @param string $type
+	 * @param string $erase
 	 * @return void
 	 */
-	public function createMaintenance(array $artifacts, array $shared = array()) {
-		$this->createReleaseWithReleasePath($this->getMaintenancePath(), $artifacts, true, $shared);
+	public function uploadMaintenance($artifact, $type = self::ARTIFACT_FILE, $erase = true) {
+		if ($erase) $this->cleanMaintenance();
+		$this->uploadArtifactToPath($this->getMaintenancePath(), $artifact, $type, true);
 	}
 	
 	/**
-	 * Selects maintenance as current
+	 * Cleans maintenance release.
+	 * 
+	 * @return void
+	 */
+	public function cleanMaintenance() {
+		$connection = $this->getConnection();
+		$connection->delete($this->getMaintenancePath(), true);
+		$connection->mkdir($this->getMaintenancePath());
+	}
+	
+	/**
+	 * Selects maintenance as current.
 	 *
 	 * @return null
 	 */
 	public function selectMaintenance() {
 		$connection = $this->getConnection();
 		$connection->symlink($this->getMaintenancePath(), $this->getCurrentPath(), true);
-	
 		return null;
 	}
 	
 	/**
-	 * Binds shared resource to release
+	 * Binds shared resource to release.
 	 * 
 	 * @param string $name - release name
 	 * @param string $sharedPath - relative path to shared
@@ -353,7 +384,7 @@ class ReleaseManager {
 	}
 
 	/**
-	 * Binds shared resource to maintenance mode release
+	 * Binds shared resource to maintenance mode release.
 	 * 
 	 * @param string $sharedPath - relative path to shared
 	 * @param boolean $ignoreMissing - ignore missing shared resources or not
@@ -405,6 +436,74 @@ class ReleaseManager {
 		// bind shared resources
 		foreach ($shared as $sharedPath) {
 			$this->bindSharedWithReleasePath($releasePath, $sharedPath);
+		}
+		
+		
+	}
+	
+	/**
+	 * Uploads artifact to release.
+	 * 
+	 * @param string $releasePath
+	 * @param string $artifactPath
+	 * @param string $type
+	 * @param boolean $overwrite
+	 * @throws ReleaseManagerException
+	 * @return void
+	 */	
+	protected function uploadArtifactToPath($releasePath, $artifactPath, $type = self::ARTIFACT_FILE, $overwrite = false) {
+		$connection = $this->getConnection();
+		if (!$connection->exists($releasePath)) {
+			throw new ReleaseManagerException(sprintf('Release path "%s" is not exists', $releasePath));
+		}
+				
+		if (!file_exists($artifactPath)) {
+			throw new ReleaseManagerException(sprintf('Artifact path "%s" is not exists', $artifactPath));
+		}
+
+		switch (strtolower($type)) {
+			
+			// plain file/dir upload
+			case self::ARTIFACT_FILE:
+				$remotePath = $releasePath . '/' . pathinfo(realpath($artifactPath), PATHINFO_BASENAME);
+				$connection->upload($remotePath, $artifactPath, true);
+				break;
+
+			// directory contents upload 
+			case self::ARTIFACT_DIR:
+				foreach (glob(realpath($artifactPath) . '/*') as $value) {
+					$this->uploadArtifactToPath($releasePath . '/' . pathinfo(realpath($value), PATHINFO_BASENAME), $value);
+				}
+				break;
+			
+			// archive upload
+			case self::ARTIFACT_ARCHIVE:
+				$extension = pathinfo($artifactPath, PATHINFO_EXTENSION);
+				$remotePath = $releasePath . '/___' . time() . ( $extension ? sprintf('.%s', $extension) : '');
+				$connection->upload($remotePath, $artifactPath, true);
+				
+				switch (strtolower($extension)) {
+					
+					case 'tar.gz':
+					case 'tgz':
+						$command = sprintf('tar -xf %s -C %s', escapeshellarg($remotePath), escapeshellarg($releasePath));
+						break;
+					
+					case 'zip':
+						$command = sprintf('unzip -o %s -d %s', escapeshellarg($remotePath), escapeshellarg($releasePath));
+						break;
+						
+					default: 
+						throw new ReleaseManagerException(sprintf('Unsupported archive type "%s"', $extension));
+						break;
+				}
+				$connection->exec($command);
+				
+				$connection->delete($remotePath);
+				break;
+			
+			default:
+				throw new ReleaseManagerException(sprintf('Invalid transfer type "%s"', $type));
 		}
 		
 	}

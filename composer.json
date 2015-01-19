@@ -1,13 +1,12 @@
 {
 	"name" : "deliveryman/release-manager",
-	"version" : "0.1.0",
+	"version" : "0.1.4",
 	"require" : {
 		"symfony/console" : "~2.6",
 		"symfony/config" : "~2.6",
 		"phpseclib/phpseclib" : "~0.3",
 		"symfony/yaml" : "~2.6",
-		"symfony/var-dumper" : "~2.6",
-		"alchemy/zippy" : "~0.2"
+		"symfony/var-dumper" : "~2.6"
 	},
 	"authors" : [{
 			"name" : "Alexander Sergeychik",
