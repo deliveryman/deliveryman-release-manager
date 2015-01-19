@@ -387,18 +387,19 @@ class ReleaseManager {
 		$connection->mkdir($releasePath);
 		
 		// transfer artifacts
-		foreach ($artifacts as $artifact) {
-			if (realpath($artifact) === false) {
-				throw new ReleaseManagerException(sprintf('Artifact "%s" does not exists', $artifact));
+		foreach ($artifacts as $artifactPattern) {
+			foreach (glob($artifactPattern) as $artifact) {
+				if (realpath($artifact) === false) {
+					throw new ReleaseManagerException(sprintf('Artifact "%s" does not exists', $artifact));
+				}
+				if (realpath(dirname($artifact)) == realpath($artifact)) {
+					$artifactPath = $releasePath;
+				} else {
+					$artifactName = pathinfo(realpath($artifact), PATHINFO_BASENAME);
+					$artifactPath = $releasePath . '/' . $artifactName;
+				}
+				$connection->upload($artifactPath, $artifact, true);
 			}
-			if (realpath(dirname($artifact)) == realpath($artifact)) {
-				$artifactPath = $releasePath;
-			} else {
-				$artifactName = pathinfo(realpath($artifact), PATHINFO_BASENAME);
-				$artifactPath = $releasePath . '/' . $artifactName;
-			}
-				
-			$connection->upload($artifactPath, $artifact, true);
 		}
 		
 		// bind shared resources
