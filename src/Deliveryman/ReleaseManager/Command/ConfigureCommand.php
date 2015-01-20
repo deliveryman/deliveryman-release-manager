@@ -6,6 +6,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Yaml\Yaml;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Creates profile configuration
@@ -23,7 +24,6 @@ class ConfigureCommand extends AbstractCommand {
 		parent::configure();
 		$this->setName('configure');
 		$this->setDescription('Creates profile configuration for current environment');
-		
 		$this->addArgument('filename', InputArgument::OPTIONAL, 'New profile filename', self::DEFAULT_PROFILE_NAME);
 	}
 
@@ -33,7 +33,15 @@ class ConfigureCommand extends AbstractCommand {
 	 * @see \Symfony\Component\Console\Command\Command::execute()
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output) {
-		$profile = $this->getProfile($input);
+		try {
+			$profile = $this->getProfile($input);
+		} catch (\Exception $e) {
+			$profile = array(
+				'host' => 'example.com',
+				'username' => 'user',
+				'path' => '.'
+			);
+		}
 		unset($profile['profiles']);
 		
 		$yaml = Yaml::dump($profile, 4);
