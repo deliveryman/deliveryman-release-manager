@@ -1,6 +1,6 @@
 {
 	"name" : "deliveryman/release-manager",
-	"version" : "0.1.4-dev",
+	"version" : "0.1.4",
 	"require" : {
 		"symfony/console" : "~2.6",
 		"symfony/config" : "~2.6",
